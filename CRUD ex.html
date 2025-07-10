@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>User Management</title>
+  <style>
+    :root {
+      --bg-color: #f9f9f9;
+      --text-color: #222;
+      --card-bg: #ffffff;
+      --primary-color: #0066cc;
+      --primary-hover: #004c99;
+      --edit-color: #2b7de9;
+      --delete-color: #e53935;
+      --border-color: #ddd;
+    }
+
+    body.dark-mode {
+      --bg-color: #121212;
+      --text-color: #e0e0e0;
+      --card-bg: #1e1e1e;
+      --primary-color: #90caf9;
+      --primary-hover: #64b5f6;
+      --edit-color: #64b5f6;
+      --delete-color: #ef5350;
+      --border-color: #333;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .theme-toggle {
+      text-align: right;
+      margin-bottom: 15px;
+    }
+
+    .theme-toggle button {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: var(--text-color);
+    }
+
+    form {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+
+    input[type="text"] {
+      padding: 10px;
+      border: 1px solid var(--border-color);
+      border-radius: 5px;
+      width: 45%;
+      background-color: var(--card-bg);
+      color: var(--text-color);
+    }
+
+    button[type="submit"] {
+      padding: 10px 20px;
+      background-color: var(--primary-color);
+      color: white;
+      font-weight: bold;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    button[type="submit"]:hover {
+      background-color: var(--primary-hover);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background-color: var(--card-bg);
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+    }
+
+    th, td {
+      padding: 12px 16px;
+      border: 1px solid var(--border-color);
+      text-align: center;
+    }
+
+    th {
+      background-color: var(--primary-color);
+      color: white;
+    }
+
+    td button {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 4px;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    td .edit-btn {
+      background-color: var(--edit-color);
+      margin-right: 5px;
+    }
+
+    td .delete-btn {
+      background-color: var(--delete-color);
+    }
+
+    td button:hover {
+      opacity: 0.85;
+    }
+
+    @media (max-width: 600px) {
+      input[type="text"] {
+        width: 100%;
+      }
+
+      form {
+        flex-direction: column;
+        align-items: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="theme-toggle">
+      <button id="toggleTheme" title="Toggle Dark/Light Mode">🌙</button>
+    </div>
+
+    <h1>User Management</h1>
+
+    <form id="userform">
+      <input type="text" id="name" placeholder="Enter name" required />
+      <input type="text" id="email" placeholder="Enter email" required />
+      <button type="submit">Add User</button>
+    </form>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Username</th>
+          <th>Email</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="userTableBody"></tbody>
+    </table>
+  </div>
+
+  <script>
+    const userForm = document.getElementById('userform');
+    const nameInput = document.getElementById('name');
+    const emailInput = document.getElementById('email');
+    const userTableBody = document.getElementById('userTableBody');
+    const toggleThemeBtn = document.getElementById('toggleTheme');
+
+    let users = [];
+    let editIndex = null;
+
+    // Load theme from localStorage
+    if (localStorage.getItem('theme') === 'dark') {
+      document.body.classList.add('dark-mode');
+      toggleThemeBtn.textContent = '☀️';
+    }
+
+    toggleThemeBtn.addEventListener('click', () => {
+      document.body.classList.toggle('dark-mode');
+      const isDark = document.body.classList.contains('dark-mode');
+      toggleThemeBtn.textContent = isDark ? '☀️' : '🌙';
+      localStorage.setItem('theme', isDark ? 'dark' : 'light');
+    });
+
+    userForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      const name = nameInput.value.trim();
+      const email = emailInput.value.trim();
+
+      if (!name || !email) return;
+
+      if (editIndex === null) {
+        users.push({ name, email });
+      } else {
+        users[editIndex] = { name, email };
+        editIndex = null;
+      }
+
+      userForm.reset();
+      renderTable();
+    });
+
+    function renderTable() {
+      userTableBody.innerHTML = '';
+
+      users.forEach((user, index) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${user.name}</td>
+          <td>${user.email}</td>
+          <td>
+            <button class="edit-btn" onclick="editUser(${index})">Edit</button>
+            <button class="delete-btn" onclick="deleteUser(${index})">Delete</button>
+          </td>
+        `;
+        userTableBody.appendChild(row);
+      });
+    }
+
+    window.editUser = function (index) {
+      const user = users[index];
+      nameInput.value = user.name;
+      emailInput.value = user.email;
+      editIndex = index;
+    };
+
+    window.deleteUser = function (index) {
+      users.splice(index, 1);
+      renderTable();
+    };
+  </script>
+</body>
+</html>
